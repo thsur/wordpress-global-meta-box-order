@@ -1,0 +1,13 @@
+
+/*.*
+
+!.gitignore
+!Readme.md
+
+/wordpress
+/tasks
+/content/*.*
+/content/themes/
+/content/plugins/*
+
+!/content/plugins/metabox-order/
