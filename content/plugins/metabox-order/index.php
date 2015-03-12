@@ -10,7 +10,7 @@ Author:      Pontycode
 Author URI:  https://github.com/pontycode
 License:     GPL v2 or later
 
-Copyright © 2014-2015 Pontycode
+Copyright © 2013-2015 Pontycode
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 */
@@ -30,9 +30,9 @@ namespace MetaboxOrder;
  * Clone meta box order on the fly, i.e., without
  * actually changing any user settings.
  *
- * Based on ideas from:
+ * Based on ideas by:
+ * http://gist.github.com/franz-josef-kaiser/9100450
  * http://wordpress.stackexchange.com/a/144608
- * https://gist.github.com/franz-josef-kaiser/9100450
  * http://wordpress.stackexchange.com/a/19972
  */
 
@@ -104,18 +104,11 @@ class MetaboxOrder {
     }
 
     /**
-     * What screen we're on.
+     * What screen we are on.
      *
      * @return String|false
      */
     protected function getCurrentScreen() {
-
-        // Too early
-
-        if (!function_exists('get_current_screen')) {
-
-            return false;
-        }
 
         $screen = get_current_screen();
 
@@ -187,7 +180,7 @@ class MetaboxOrder {
 
         $this->removeFilter();
 
-        // ...because we don't want to get caught in an endless loop
+        // ...because we don't want to get caught in an endless loop while cloning
 
         $cloned = get_user_meta(
 
@@ -211,6 +204,34 @@ class MetaboxOrder {
         return $cloned;
     }
 
+    /**
+     * Clone colum layout
+     *
+     * @return void
+     */
+    public function cloneColumnLayout() {
+
+        $screens = array_unique(array_map(function ($meta_key) {
+
+            return substr($meta_key, strpos($meta_key, '_'));
+
+        }, $this->clone_meta_keys));
+
+        foreach ($screens as $screen) {
+
+            $clone = get_user_option('screen_layout'.$screen, $this->clone_from_user_id);
+
+            add_filter('get_user_option_screen_layout'.$screen, function ($columns) use ($clone) {
+
+                return $clone ? $clone : $columns;
+
+            }, 10, 1);
+        }
+    }
+
+    /**
+     * Setup
+     */
     public function __construct() {
 
         $clone_from = get_users(array('role' => 'administrator'));
@@ -221,11 +242,15 @@ class MetaboxOrder {
 
             $this->setMetaKeys();
             $this->addFilter();
+            $this->cloneColumnLayout();
         }
     }
 }
 
 if (is_admin()) {
 
-    new MetaboxOrder();
+    add_action('wp_loaded', function () {
+
+        new MetaboxOrder();
+    });
 }
