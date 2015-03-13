@@ -2,11 +2,11 @@
 
 /*
 
-Plugin Name: Custom Metabox Order
+Plugin Name: Custom Meta Box Order
 Description: Clone meta box order on the fly without overwriting user settings.
 Version:     1.0.2
 Plugin URI:  https://github.com/pontycode/wordpress-custom-metabox-order/
-Author:      Pontycode
+Author:      Thsurs
 Author URI:  https://github.com/pontycode
 License:     GPL v2 or later
 
@@ -24,19 +24,93 @@ GNU General Public License for more details.
 
 */
 
-namespace MetaboxOrder;
+namespace MetaBoxOrder;
+
+/**
+ * Configuration
+ *
+ * Example
+ * -------
+ *
+ * To replace the default function for getting the blueprint user id,
+ * add the following to your theme's function.php:
+ *
+ * \MetaBoxOrder\Config::$getBlueprintUserId = function () { return $someUserId; };
+ *
+ */
+class Config {
+
+    /**
+     * Editing screens to operate on
+     *
+     * @var String
+     */
+    public static $screens = array(
+
+        'post', // Includes pages & custom post types by default
+        'dashboard'
+    );
+
+    /**
+     * On which specific post & screen types to operate on.
+     *
+     * @var Array
+     */
+    public static $filter = array('post', 'page', 'dashboard');
+
+    /**
+     * Whether or not to include Custom Post Types.
+     *
+     * @var Boolean
+     */
+    public static $include_cpts = true;
+
+    /**
+     * Post types to exclude
+     *
+     * Use this if you want to include Custom Post Types,
+     * but exclude some of them.
+     *
+     * @var Array
+     */
+    public static $exclude = array();
+
+    /**
+     * Register a function here returning
+     * a valid user id.
+     *
+     * See below for default implementation.
+     *
+     * @var String
+     */
+    public static $getBlueprintUserId;
+}
+
+/**
+ * Initialize an editor
+ *
+ * @return Integer - User Id
+ */
+Config::$getBlueprintUserId = function () {
+
+    $clone_from = get_users(array('role' => 'administrator'));
+
+    if (!empty($clone_from)) {
+
+        return $clone_from[0]->ID;
+    }
+};
 
 /**
  * Clone meta box order on the fly, i.e., without
  * actually changing any user settings.
  *
- * Based on ideas by:
+ * Based on work & ideas by:
  * http://gist.github.com/franz-josef-kaiser/9100450
  * http://wordpress.stackexchange.com/a/144608
  * http://wordpress.stackexchange.com/a/19972
  */
-
-class MetaboxOrder {
+class MetaBoxOrder {
 
     /**
      * User to clone from
@@ -50,35 +124,14 @@ class MetaboxOrder {
      *
      * @var Array
      */
-    protected $allowed_screens = array(
-
-        'post', // Includes pages & custom post types
-        'dashboard'
-    );
+    protected $allowed_screens = array();
 
     /**
-     * Metabox keys to clone
+     * Meta box keys to clone
      *
      * @var Array
      */
     protected $clone_meta_keys = array();
-
-    /**
-     * Set meta keys to clone.
-     *
-     * @return void
-     */
-    protected function setMetaKeys() {
-
-        $screens    = array('post', 'page', 'dashboard');
-        $post_types = get_post_types(array('_builtin' => false)); // Custom Post Types
-
-        foreach (array_merge($screens, $post_types) as $slug) {
-
-            $this->clone_meta_keys[] = 'meta-box-order_'.$slug;
-            $this->clone_meta_keys[] = 'metaboxhidden_'.$slug;
-        }
-    }
 
     /**
      * To prevent an endless loop, we need to be able
@@ -106,7 +159,7 @@ class MetaboxOrder {
     /**
      * What screen we are on.
      *
-     * @return String|false
+     * @return WP_Screen|false
      */
     protected function getCurrentScreen() {
 
@@ -117,15 +170,15 @@ class MetaboxOrder {
             return false;
         }
 
-        return $screen->base;
+        return $screen;
     }
 
     /**
-     * A meta key might or might not be prefixed, so
-     * we need to normalize it.
+     * Normalize a meta key, which might or might not
+     * be prefixed.
      *
      * @param  String
-     * @return String - the meta key with any prefix stripped
+     * @return String - a key without its prefix
      */
     public function normalizeMetaKey($meta_key) {
 
@@ -140,7 +193,7 @@ class MetaboxOrder {
     }
 
     /**
-     * Clone metabox order (technically, this will clone any key
+     * Clone meta box order (technically, this will clone any key
      * registered by {@see setMetaKeys()}).
      *
      * @return void
@@ -161,7 +214,7 @@ class MetaboxOrder {
             return $abort;
         }
 
-        if (!in_array($screen, $this->allowed_screens)) {
+        if (!in_array($screen->base, $this->allowed_screens)) {
 
             $this->removeFilter();
             return $abort;
@@ -230,19 +283,60 @@ class MetaboxOrder {
     }
 
     /**
-     * Setup
+     * Apply configuration
+     *
+     * @return void
+     */
+        protected function setup() {
+
+        $screens  = Config::$screens;
+        $subtypes = Config::$filter;
+
+        if (Config::$include_cpts) {
+
+            $cpts     = get_post_types(array('_builtin' => false));
+            $subtypes = array_merge($subtypes, $cpts);
+        }
+
+        foreach (Config::$exclude as $type) {
+
+            $exclude = array_search($type, $subtypes);
+
+            if ($exclude !== false) {
+
+                unset($subtypes[$exclude]);
+            }
+        }
+
+        foreach ($subtypes as $type) {
+
+            $this->clone_meta_keys[] = 'meta-box-order_'.$type;
+            $this->clone_meta_keys[] = 'metaboxhidden_'.$type;
+        }
+
+        $this->allowed_screens = $screens;
+    }
+
+    /**
+     * Init
      */
     public function __construct() {
 
-        $clone_from = get_users(array('role' => 'administrator'));
+        $getId = Config::$getBlueprintUserId;
 
-        if (!empty($clone_from)) {
+        if (is_callable($getId)) {
 
-            $this->clone_from_user_id = $clone_from[0]->ID;
+            $id   = $getId();
+            $user = get_user_by('id', $id);
 
-            $this->setMetaKeys();
-            $this->addFilter();
-            $this->cloneColumnLayout();
+            if ($id && $user) {
+
+                $this->clone_from_user_id = $id;
+
+                $this->setup();
+                $this->addFilter();
+                $this->cloneColumnLayout();
+            }
         }
     }
 }
@@ -251,6 +345,6 @@ if (is_admin()) {
 
     add_action('wp_loaded', function () {
 
-        new MetaboxOrder();
+        new MetaBoxOrder();
     });
 }
