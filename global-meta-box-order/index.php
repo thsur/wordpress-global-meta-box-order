@@ -2,8 +2,8 @@
 
 /*
 
-Plugin Name: Custom Meta Box Order
-Description: Clone meta box order on the fly without overwriting user settings.
+Plugin Name: Global Meta Box Order
+Description: Harmonize column layout and meta box positions across all backend users of your WordPress installation.
 Version:     1.0.2
 Plugin URI:  https://github.com/pontycode/wordpress-custom-metabox-order/
 Author:      Thsurs
@@ -24,7 +24,7 @@ GNU General Public License for more details.
 
 */
 
-namespace MetaBoxOrder;
+namespace GlobalMetaBoxOrder;
 
 /**
  * Configuration
@@ -35,21 +35,10 @@ namespace MetaBoxOrder;
  * To replace the default function for getting the blueprint user id,
  * add the following to your theme's function.php:
  *
- * \MetaBoxOrder\Config::$getBlueprintUserId = function () { return $someUserId; };
+ * \GlobalMetaBoxOrder\Config::$getBlueprintUserId = function () { return $someUserId; };
  *
  */
 class Config {
-
-    /**
-     * Editing screens to operate on
-     *
-     * @var String
-     */
-    public static $screens = array(
-
-        'post', // Includes pages & custom post types by default
-        'dashboard'
-    );
 
     /**
      * On which specific post & screen types to operate on.
@@ -69,11 +58,21 @@ class Config {
      * Post types to exclude
      *
      * Use this if you want to include Custom Post Types,
-     * but exclude some of them.
+     * but exclude some of them. Or if you just want to
+     * unset some of the default filters above. Or both
+     * of it.
      *
      * @var Array
      */
     public static $exclude = array();
+
+    /**
+     * Remove screen options for selected screens
+     *
+     * @var Boolean
+     */
+
+    public static $remove_screen_options = false;
 
     /**
      * Register a function here returning
@@ -105,7 +104,8 @@ Config::$getBlueprintUserId = function () {
  * Clone meta box order on the fly, i.e., without
  * actually changing any user settings.
  *
- * Based on work & ideas by:
+ * Originally based on work & ideas by:
+ *
  * http://gist.github.com/franz-josef-kaiser/9100450
  * http://wordpress.stackexchange.com/a/144608
  * http://wordpress.stackexchange.com/a/19972
@@ -157,7 +157,7 @@ class MetaBoxOrder {
     }
 
     /**
-     * What screen we are on.
+     * What base screen we are on, if any.
      *
      * @return WP_Screen|false
      */
@@ -171,6 +171,20 @@ class MetaBoxOrder {
         }
 
         return $screen;
+    }
+
+    /**
+     * Whether the given screen is in the list of allowed ones.
+     *
+     * @param  WP_Screen
+     * @return Boolean
+     */
+    protected function isScreenAllowed(\WP_Screen $screen) {
+
+        // Be as specific as it gets
+        $screen = $screen->post_type ? $screen->post_type : $screen->base;
+
+        return in_array($screen, $this->allowed_screens);
     }
 
     /**
@@ -200,12 +214,12 @@ class MetaBoxOrder {
      */
     public function cloneMeta($abort, $userID, $meta_key) {
 
+        // Return early on wrong user or screen
+
         if ($this->clone_from_user_id == $userID) {
 
            return $abort;
         }
-
-        // Don't trigger on the wrong screens
 
         $screen = $this->getCurrentScreen();
 
@@ -214,7 +228,7 @@ class MetaBoxOrder {
             return $abort;
         }
 
-        if (!in_array($screen->base, $this->allowed_screens)) {
+        if (!$this->isScreenAllowed($screen)) {
 
             $this->removeFilter();
             return $abort;
@@ -258,7 +272,7 @@ class MetaBoxOrder {
     }
 
     /**
-     * Clone colum layout
+     * Clone colum layout.
      *
      * @return void
      */
@@ -283,32 +297,44 @@ class MetaBoxOrder {
     }
 
     /**
+     * Remove screen options for selected screens.
+     *
+     * @return void
+     */
+    public function removeScreenOptions() {
+
+        add_filter('screen_options_show_screen', function () {
+
+            return !$this->isScreenAllowed($this->getCurrentScreen());
+        });
+    }
+
+    /**
      * Apply configuration
      *
      * @return void
      */
-        protected function setup() {
+    protected function setup() {
 
-        $screens  = Config::$screens;
-        $subtypes = Config::$filter;
+        $screens  = Config::$filter;
 
         if (Config::$include_cpts) {
 
-            $cpts     = get_post_types(array('_builtin' => false));
-            $subtypes = array_merge($subtypes, $cpts);
+            $cpts    = get_post_types(array('_builtin' => false));
+            $screens = array_merge($screens, $cpts);
         }
 
         foreach (Config::$exclude as $type) {
 
-            $exclude = array_search($type, $subtypes);
+            $exclude = array_search($type, $screens);
 
             if ($exclude !== false) {
 
-                unset($subtypes[$exclude]);
+                unset($screens[$exclude]);
             }
         }
 
-        foreach ($subtypes as $type) {
+        foreach ($screens as $type) {
 
             $this->clone_meta_keys[] = 'meta-box-order_'.$type;
             $this->clone_meta_keys[] = 'metaboxhidden_'.$type;
@@ -336,6 +362,11 @@ class MetaBoxOrder {
                 $this->setup();
                 $this->addFilter();
                 $this->cloneColumnLayout();
+
+                if (Config::$remove_screen_options) {
+
+                    $this->removeScreenOptions();
+                }
             }
         }
     }
