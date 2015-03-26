@@ -26,6 +26,8 @@ GNU General Public License for more details.
 
 namespace GlobalMetaBoxOrder;
 
+define(__NAMESPACE__.'\VERSION', '1.0.2');
+
 /**
  * Configuration
  *
@@ -41,7 +43,7 @@ namespace GlobalMetaBoxOrder;
 class Config {
 
     /**
-     * On which specific post & screen types to operate on.
+     * On which post & screen types to operate on.
      *
      * @var Array
      */
@@ -58,9 +60,7 @@ class Config {
      * Post types to exclude
      *
      * Use this if you want to include Custom Post Types,
-     * but exclude some of them. Or if you just want to
-     * unset some of the default filters above. Or both
-     * of it.
+     * but exclude some of them.
      *
      * @var Array
      */
@@ -71,8 +71,15 @@ class Config {
      *
      * @var Boolean
      */
-
     public static $remove_screen_options = false;
+
+    /**
+     * Lock meta box order. When switched on, your users
+     * won't be able to move the boxes around anymore.
+     *
+     * @var Boolean
+     */
+    public static $lock_meta_box_order = false;
 
     /**
      * Register a function here returning
@@ -183,8 +190,18 @@ class MetaBoxOrder {
 
         // Be as specific as it gets
         $screen = $screen->post_type ? $screen->post_type : $screen->base;
-
         return in_array($screen, $this->allowed_screens);
+    }
+
+    /**
+     * Whether the given user is the blueprint user.
+     *
+     * @param  Int
+     * @return Boolean
+     */
+    protected function isBlueprintUser($user_id) {
+
+        return $this->clone_from_user_id === $user_id;
     }
 
     /**
@@ -194,7 +211,7 @@ class MetaBoxOrder {
      * @param  String
      * @return String - a key without its prefix
      */
-    public function normalizeMetaKey($meta_key) {
+    protected function normalizeMetaKey($meta_key) {
 
         global $wpdb;
 
@@ -212,11 +229,11 @@ class MetaBoxOrder {
      *
      * @return void
      */
-    public function cloneMeta($abort, $userID, $meta_key) {
+    public function cloneMeta($abort, $user_id, $meta_key) {
 
         // Return early on wrong user or screen
 
-        if ($this->clone_from_user_id == $userID) {
+        if ($this->isBlueprintUser($user_id)) {
 
            return $abort;
         }
@@ -276,7 +293,7 @@ class MetaBoxOrder {
      *
      * @return void
      */
-    public function cloneColumnLayout() {
+    protected function cloneColumnLayout() {
 
         $screens = array_unique(array_map(function ($meta_key) {
 
@@ -301,11 +318,38 @@ class MetaBoxOrder {
      *
      * @return void
      */
-    public function removeScreenOptions() {
+    protected function removeScreenOptions() {
 
         add_filter('screen_options_show_screen', function () {
 
             return !$this->isScreenAllowed($this->getCurrentScreen());
+        });
+    }
+
+    /**
+     * Remove screen options for selected screens.
+     *
+     * @return void
+     */
+    protected function lockMetaBoxOrder() {
+
+        add_action('admin_enqueue_scripts', function () {
+
+            $screen = $this->getCurrentScreen();
+
+            if (!$this->isScreenAllowed($screen)) {
+
+                return;
+            }
+
+            wp_enqueue_script(
+
+                'global_meta_box_order',
+                plugin_dir_url(__FILE__).'lock_order.js',
+                array('jquery', 'jquery-ui-sortable'),
+                \GlobalMetaBoxOrder\VERSION,
+                true
+            );
         });
     }
 
@@ -344,7 +388,34 @@ class MetaBoxOrder {
     }
 
     /**
-     * Init
+     * Init actions.
+     *
+     * @return void
+     */
+    protected function init() {
+
+        $this->addFilter(); // Main sorting action
+        $this->cloneColumnLayout(); // Not configurable by design.
+                                    // As to the why: Make a one column layout, switch to
+                                    // a user with a two column layout, _don't_ clone, and
+                                    // see everything stuffed in the wrong column.
+
+        if (Config::$remove_screen_options) {
+
+            $this->removeScreenOptions();
+        }
+
+        if (Config::$lock_meta_box_order) {
+
+            $this->lockMetaBoxOrder();
+        }
+    }
+
+    /**
+     * Constructor.
+     *
+     * Proceeds to setup and further action only if
+     * the current is not the blueprint user.
      */
     public function __construct() {
 
@@ -352,21 +423,16 @@ class MetaBoxOrder {
 
         if (is_callable($getId)) {
 
-            $id   = $getId();
-            $user = get_user_by('id', $id);
+            $id      = $getId();
+            $exists  = get_user_by('id', $id);
+            $current = get_current_user_id();
 
-            if ($id && $user) {
+            if ($id && $exists && $id != $current) {
 
                 $this->clone_from_user_id = $id;
 
                 $this->setup();
-                $this->addFilter();
-                $this->cloneColumnLayout();
-
-                if (Config::$remove_screen_options) {
-
-                    $this->removeScreenOptions();
-                }
+                $this->init();
             }
         }
     }
