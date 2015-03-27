@@ -170,7 +170,7 @@ if (is_admin()) {
 
 ## On Moving the WYSIWYG Editor
 
-The position of WordPress' WYSIWYG editor is fixed, and can't be changed out of the box (mostly because it lacks one around it). There are reasons for this, but if you want to have a positionable editor anyway, you might want to have a look at our very own [_Movable Editor_]() plugin.
+The position of WordPress' WYSIWYG editor is fixed, and can't be changed out of the box (mostly because it lacks one around it). There are reasons for this, but if you want to have a positionable editor anyway, you might want to have a look at our very own [_Movable Editor_](https://github.com/pontycode/wordpress-movable-editor) plugin.
 
 If, on the other hand, you want to place one specific box _above_ the editor, you might want to check out [this answer](http://wordpress.stackexchange.com/a/88103) on _stackexchange_.
 
