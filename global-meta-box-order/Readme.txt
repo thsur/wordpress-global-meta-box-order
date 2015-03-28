@@ -71,6 +71,7 @@ The backend integration is kept to a minimum. No navigation entry, no options pa
 By the way: You don't *need* to configure the plugin. As long as it finds an admin user, it will work just fine.
 
 **Preparation**
+
 Fire up an editor, load your *functions.php*, and copy and paste the following code into it. The idea is to have some sort of container to do the configuration in, but do it any way you like.
 
 For brevity, we'll assume the plugin is loaded and active, so we won't check for that (see this nice [write-up](http://queryloop.com/how-to-detect-if-a-wordpress-plugin-is-active/) on *QueryLoop* on some ways to do it, though).
@@ -92,6 +93,7 @@ Read on and add some of the configuration settings that follow to the  container
 Please keep in mind that you need to be logged in as any user but your blueprint user to see a setting applied. Again, the [*User Switching*](https://wordpress.org/plugins/user-switching/) plugin might come in handy.
 
 **Screens To Operate On**
+
 By default, the plugin operates on the post, page, and custom post type editing screens, and the dashboard.
 
 You can change this as follows:
@@ -114,6 +116,7 @@ MetaBoxConfig::$exclude = array('acme_product');
 *MetaBoxConfig* in the example above is assumed to be an alias to *\GlobalMetaBoxOrder\Config* as shown in the preparation section above.    
 
 **Changing the Blueprint User**
+
 Register a function that returns a user id, like so:
 
 `
@@ -133,6 +136,7 @@ MetaBoxConfig::$getBlueprintUserId = function () {
 *MetaBoxConfig* in the example above is assumed to be an alias to *\GlobalMetaBoxOrder\Config* as shown in the preparation section above.        
 
 **Locking Views**
+
 By default, all users will be able to interact with the screen options box, and to move around the meta boxes themselves. There is a rationale behind it, but to cut things short, this is how you might want to change it:
 
 `
