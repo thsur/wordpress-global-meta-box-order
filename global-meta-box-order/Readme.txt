@@ -33,9 +33,7 @@ The plugin doesn't write anything to the database, it just reads. So it never to
 
 The plugin operates on a blueprint user whose screen settings for meta boxes (visibility, position and ordering) and column layout are cloned for every other backend user on the fly.
 
-By default, this blueprint user is the first admin user found, so you'll need to be logged in as **that user** to globally change screen settings.   
-
-For how to change the default blueprint user, see *Configuration* below.
+By default, this blueprint user is the first admin user found, so you'll need to be logged in as **that user** to globally change screen settings. For how to change the default blueprint user as well as other settings, please refer to the *Configuration* section below.
 
 = Where It Works  =
 
@@ -45,8 +43,6 @@ By default, the plugin kicks in when a user:
 * edits a page
 * edits a custom post type
 * hits the dashboard
-
-See *Configuration* on how to limit its scope.
 
 = What It Changes =
 
@@ -58,9 +54,7 @@ It will always change
 When told so, it will also
 
 * remove the screen options box
-* immobilize all boxes
-
-Again, please refer to the configuration section for details.   
+* immobilize all boxes, so they can't be moved around by your users anymore
 
 = Usage =
 
@@ -68,17 +62,16 @@ Log in as your blueprint user. By default, the is the first admin user found in 
 
 Select an editing screen (post, page, custom post type) or the dashboard, move the meta boxes around, change their screen settings and the screen's column layout. Switch to some user to review your settings, switch back to adjust them.
 
-When done, you might want to lock your views down. See *Configuration* on how to do so. 
+When done, you might want to lock your views down by removing the screen options box and by locking the boxes' sort order. Your blueprint user, of course, wil not be affected by this. 
 
 = Configuration =
 
-The backend integration is kept to a minimum. No navigation entry, no options page, no entry in the database. Instead, the place to go to configure the plugin is your theme's `functions.php`.
+The backend integration is kept to a minimum. No navigation entry, no options page, no entry in the database. Instead, the place to go to configure the plugin is your theme's *functions.php*.
 
 By the way: You don't *need* to configure the plugin. As long as it finds an admin user, it will work just fine.
 
 **Preparation**
-
-Fire up an editor, load your functions.php, and copy and paste the following code into it. The idea is to have some sort of container to do the configuration in, but do it any way you like.
+Fire up an editor, load your *functions.php*, and copy and paste the following code into it. The idea is to have some sort of container to do the configuration in, but do it any way you like.
 
 For brevity, we'll assume the plugin is loaded and active, so we won't check for that (see this nice [write-up](http://queryloop.com/how-to-detect-if-a-wordpress-plugin-is-active/) on *QueryLoop* on some ways to do it, though).
 
@@ -99,7 +92,6 @@ Read on and add some of the configuration settings that follow to the  container
 Please keep in mind that you need to be logged in as any user but your blueprint user to see a setting applied. Again, the [*User Switching*](https://wordpress.org/plugins/user-switching/) plugin might come in handy.
 
 **Screens To Operate On**
-
 By default, the plugin operates on the post, page, and custom post type editing screens, and the dashboard.
 
 You can change this as follows:
@@ -119,10 +111,9 @@ MetaBoxConfig::$include_cpts = true;
 MetaBoxConfig::$exclude = array('acme_product');
 `
 
-`MetaBoxConfig` in the example above is assumed to be an alias to `\GlobalMetaBoxOrder\Config` as shown in the preparation section above.    
+*MetaBoxConfig* in the example above is assumed to be an alias to *\GlobalMetaBoxOrder\Config* as shown in the preparation section above.    
 
 **Changing the Blueprint User**
-
 Register a function that returns a user id, like so:
 
 `
@@ -139,10 +130,9 @@ MetaBoxConfig::$getBlueprintUserId = function () {
 };
 `
 
-`MetaBoxConfig` in the example above is assumed to be an alias to `\GlobalMetaBoxOrder\Config` as shown in the preparation section above.    
+*MetaBoxConfig* in the example above is assumed to be an alias to *\GlobalMetaBoxOrder\Config* as shown in the preparation section above.        
 
 **Locking Views**
-
 By default, all users will be able to interact with the screen options box, and to move around the meta boxes themselves. There is a rationale behind it, but to cut things short, this is how you might want to change it:
 
 `
@@ -153,10 +143,9 @@ MetaBoxConfig::$remove_screen_options = true;
 MetaBoxConfig::$lock_meta_box_order = true; 
 `
 
-`MetaBoxConfig` in the example above is assumed to be an alias to `\GlobalMetaBoxOrder\Config` as shown in the preparation section above.    
+*MetaBoxConfig* in the example above is assumed to be an alias to *\GlobalMetaBoxOrder\Config* as shown in the preparation section above.    
 
 **Example Configuration**
-
 `
 if (is_admin()) {
 
