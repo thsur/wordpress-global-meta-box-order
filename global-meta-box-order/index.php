@@ -6,7 +6,7 @@ Plugin Name: Global Meta Box Order
 Description: Harmonize column layout and meta box positions across all backend users of your WordPress installation.
 Version:     1.0.2
 Plugin URI:  https://github.com/pontycode/wordpress-custom-metabox-order/
-Author:      Thsurs
+Author:      Nosurs
 Author URI:  https://github.com/pontycode
 License:     GPL v2 or later
 
