@@ -170,7 +170,7 @@ class MetaBoxOrder {
      */
     protected function getCurrentScreen() {
 
-        if ( is_ajax() ) {
+        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
             return false;
         }
 
