@@ -26,7 +26,7 @@ GNU General Public License for more details.
 
 namespace GlobalMetaBoxOrder;
 
-define(__NAMESPACE__.'\VERSION', '1.0.2');
+define(__NAMESPACE__.'\VERSION', '1.0.3');
 
 /**
  * Configuration
@@ -170,7 +170,8 @@ class MetaBoxOrder {
      */
     protected function getCurrentScreen() {
 
-        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+        if (defined('DOING_AJAX') && DOING_AJAX) {
+
             return false;
         }
 

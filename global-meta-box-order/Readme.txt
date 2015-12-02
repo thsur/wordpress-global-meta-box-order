@@ -1,7 +1,8 @@
 === Global Meta Box Order ===
+Contributors: nosurs
 Tags:  admin, custom, customize, customization, post, page, custom-post-type, dashboard, meta, meta-box, metabox, ui
 Requires at least: 4.1
-Tested up to: 4.1
+Tested up to: 4.3
 Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -27,11 +28,11 @@ Download and unpack, then move the folder 'global-meta-box-order' into your 'plu
 
 = Rollback =
 
-The plugin doesn't write anything to the database, it just reads. So it never touches any user settings, but instead filters them on every turn. Though all applied changes *appear* to be permanent from a user's perspective, they are not. Just deactivate the plugin and see all changes disappear. Activate it again, and they will all be reapplied.  
+The plugin doesn't write anything to the database, it just reads. So it never touches any user settings, but instead filters them on a per request basis. Though all applied changes *appear* to be permanent from a user's perspective, they are not. Just deactivate the plugin and see all changes disappear. Activate it again, and they will all be reapplied.  
 
 = How It Works =
 
-The plugin operates on a blueprint user whose screen settings for meta boxes (visibility, position and ordering) and column layout are cloned for every other backend user on the fly.
+The plugin operates on a blueprint user whose screen settings for meta boxes (visibility, position and ordering), and column layout are cloned for all other backend users on the fly.
 
 By default, this blueprint user is the first admin user found, so you'll need to be logged in as **that user** to globally change screen settings. For how to change the default blueprint user as well as other settings, please refer to the *Configuration* section below.
 
@@ -88,7 +89,7 @@ if (is_admin()) {
 }
 `
 
-Read on and add some of the configuration settings that follow to the  container above. When done, you might also want to have a look at the example configuration near the end of this document.
+Now we are ready to add some of the configuration settings below to adjust the plugin's default behaviour. You might also want to have a look at the example configuration near the end of this document.
 
 Please keep in mind that you need to be logged in as any user but your blueprint user to see a setting applied. Again, the [*User Switching*](https://wordpress.org/plugins/user-switching/) plugin might come in handy.
 
@@ -173,6 +174,16 @@ if (is_admin()) {
 
 = On Moving the WYSIWYG Editor =
 
-The position of WordPress' WYSIWYG editor is fixed, and can't be changed out of the box (mostly because it lacks one around it). There are reasons for this, but if you want to have a positionable editor anyway, you might want to have a look at our very own [*Movable Editor*](https://github.com/pontycode/wordpress-movable-editor) plugin.
+The position of WordPress' WYSIWYG editor is fixed, and can't be changed out of the box (mostly because it lacks a box around it). There are reasons for this, but if you want to have a positionable editor anyway, you might want to have a look at our very own [*Movable Editor*](https://github.com/pontycode/wordpress-movable-editor) plugin.
 
-If, on the other hand, you want to place one specific box *above* the editor, you might want to check out [this answer](http://wordpress.stackexchange.com/a/88103) on *stackexchange*.
+If, on the other hand, if you want to place one specific box *above* the editor, you might want to check out [this answer](http://wordpress.stackexchange.com/a/88103) on *stackexchange*.
+
+== Changelog ==
+
+= 1.0.3 =
+* Check for AJAX requests
+
+== Upgrade Notice ==
+
+= 1.0.3 =
+Fixed a bug with incoming AJAX requests.
