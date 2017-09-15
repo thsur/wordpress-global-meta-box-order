@@ -169,6 +169,10 @@ class MetaBoxOrder {
      * @return WP_Screen|false
      */
     protected function getCurrentScreen() {
+        
+        if ( ! function_exists( 'get_current_screen' ) ) {
+            return false;
+        }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
 
